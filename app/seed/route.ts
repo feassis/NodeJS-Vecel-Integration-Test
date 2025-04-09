@@ -1,4 +1,7 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
+
+const hash = await bcrypt.hash('senha', 10);
+const match = await bcrypt.compare('senha', hash);
 import postgres from 'postgres';
 import { invoices, customers, revenue, users } from '../lib/placeholder-data';
 
