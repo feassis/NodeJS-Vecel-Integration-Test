@@ -6,6 +6,7 @@ import {
   InvoicesTable,
   LatestInvoiceRaw,
   Revenue,
+  EventField
 } from './definitions';
 import { formatCurrency } from './utils';
 
@@ -159,11 +160,120 @@ export async function fetchInvoiceById(id: string) {
       // Convert amount from cents to dollars
       amount: invoice.amount / 100,
     }));
-
+    console.log(invoice); 
     return invoice[0];
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch invoice.');
+  }
+}
+
+export async function fetchEvents() {
+  try {
+    const events = await sql<EventField[]>`
+      SELECT
+        id,
+        name,
+        date,
+        location,
+        rules,
+        price,
+        patreon_banner,
+        rehearsal_dates,
+        costumers_id_paid,
+        costumers_id_subscribed 
+      FROM events
+      ORDER BY date ASC
+    `;
+
+    return events;
+  } catch (err) {
+    console.error('Database Error:', err);
+    throw new Error('Failed to fetch all events.');
+  }
+}
+
+export async function fetchEventById(id: string) {
+  try {
+    const data = await sql<EventField[]>`
+      SELECT
+        events.id,
+        events.name,
+        events.date,
+        events.location,
+        events.rules,
+        events.price,
+        events.patreon_banner,
+        events.rehearsal_dates
+      FROM events
+      WHERE events.id = ${id};
+    `;
+
+    const event = data.map((event) => ({
+      ...event,
+      // Convert price from cents to currency format
+      price: event.price / 100,
+    }));
+
+    return event[0];
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch event.');
+  }
+}
+
+export async function fetchEventsPages(query: string) {
+  try {
+    const data = await sql`
+      SELECT COUNT(*)
+      FROM events
+      WHERE
+        name ILIKE ${`%${query}%`} OR
+        location ILIKE ${`%${query}%`} OR
+        rules ILIKE ${`%${query}%`} OR
+        date::text ILIKE ${`%${query}%`} OR
+        price::text ILIKE ${`%${query}%`}
+    `;
+
+    const totalPages = Math.ceil(Number(data[0].count) / ITEMS_PER_PAGE);
+    return totalPages;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch total number of events.');
+  }
+}
+
+export async function fetchFilteredEvents(query: string, currentPage: number) {
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+  console.log("fetching events")
+  try {
+    const events = await sql<EventField[]>`
+      SELECT
+        id,
+        name,
+        date,
+        location,
+        rules,
+        price,
+        patreon_banner,
+        rehearsal_dates,
+        costumers_id_paid,
+        costumers_id_subscribed 
+      FROM events
+      WHERE
+        name ILIKE ${`%${query}%`} OR
+        location ILIKE ${`%${query}%`} OR
+        rules ILIKE ${`%${query}%`} OR
+        date::text ILIKE ${`%${query}%`} OR
+        price::text ILIKE ${`%${query}%`}
+      ORDER BY date DESC
+      LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
+    `;
+
+    return events;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch events.');
   }
 }
 

@@ -26,6 +26,19 @@ export type Invoice = {
   status: 'pending' | 'paid';
 };
 
+export type EventField = {
+  id: string;
+  name: string;
+  date: string;
+  location: string;
+  rules: string;
+  price: number;
+  patreon_banner: string;
+  rehearsal_dates: string[];
+  costumers_id_paid: string[];
+  costumers_id_subscribed : string[];
+};
+
 export type Revenue = {
   month: string;
   revenue: number;

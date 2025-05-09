@@ -10,7 +10,7 @@ import {
 
   const links = [
     { name: 'Dashboard', href: '/', icon: HomeIcon },
-    { name: 'Customers', href: '/customers', icon: UserGroupIcon },
+    { name: 'Events', href: '/events', icon: UserGroupIcon },
     { name: 'Invoices', href: '/invoices', icon: DocumentDuplicateIcon },
   ];
    
