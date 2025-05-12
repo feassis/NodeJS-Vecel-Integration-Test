@@ -82,8 +82,6 @@ export async function createEvent(prevState: EventState, formData: FormData)
     }
   )
 
-  console.log(formData.getAll('rehearsalDates'));
-
 
   if (!validatedEventFields.success) {
     return {
@@ -97,8 +95,10 @@ export async function createEvent(prevState: EventState, formData: FormData)
   const costumersIdPaid : string[] = []
   const costumersIdSubscribed : string[] = []
 
-  const rehearsalDatesProcessed = rehearsalDates.length === 1 && typeof rehearsalDates[0] === 'string'
-  ? rehearsalDates[0].split(',')  : rehearsalDates;
+  const rehearsalDatesProcessed =
+  rehearsalDates.length === 1 && typeof rehearsalDates[0] === 'string'
+    ? rehearsalDates[0].split(',').map((d) => d.trim())
+    : rehearsalDates;
 
   const priceInCents = price * 100;
 
@@ -122,14 +122,16 @@ export async function createEvent(prevState: EventState, formData: FormData)
         ${rules}, 
         ${priceInCents}, 
         ${patreonBanner}, 
-        ${sql.array(rehearsalDatesProcessed as string[])},
-        ${sql.array(costumersIdPaid as string[])},
-        ${sql.array(costumersIdSubscribed as string[])}
+        ${rehearsalDatesProcessed as string[]}::text[],
+        ${sql.array(costumersIdPaid as string[])}::text[],
+        ${sql.array(costumersIdSubscribed as string[])}::text[]
       )
     `;
   } catch (error) {
     console.error(error);
   }
+
+  console.log(formData.getAll('sent?'));
 
   revalidatePath('/dashboard/events');
   redirect('/dashboard/events');
@@ -192,6 +194,8 @@ export async function updateEvent(
     console.error(error);
     return { message: 'Database Error: Failed to Update Event.' };
   }
+
+  console.log("Update Event")
 
   revalidatePath('/dashboard/events');
   redirect('/dashboard/events');

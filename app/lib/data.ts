@@ -243,7 +243,13 @@ export async function fetchEventsPages(query: string) {
   }
 }
 
-export async function fetchFilteredEvents(query: string, currentPage: number) {
+export async function fetchFilteredEvents(query: string, currentPage: number, onlyFuture: boolean) {
+  const now = new Date().toISOString();
+
+  console.log("is future - " + onlyFuture)
+  const dateFilter = onlyFuture ? sql`AND date > ${now}` : sql``;
+  console.log("date filtrerd " + dateFilter)
+
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
   console.log("fetching events")
   try {
@@ -266,10 +272,12 @@ export async function fetchFilteredEvents(query: string, currentPage: number) {
         rules ILIKE ${`%${query}%`} OR
         date::text ILIKE ${`%${query}%`} OR
         price::text ILIKE ${`%${query}%`}
+        ${dateFilter}
       ORDER BY date DESC
       LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
     `;
 
+    
     return events;
   } catch (error) {
     console.error('Database Error:', error);

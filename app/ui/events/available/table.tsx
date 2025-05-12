@@ -1,8 +1,7 @@
-import { UpdateEvents, DeleteEvents } from '@/app/ui/events/buttons';
 import { formatDateToLocal, formatCurrency } from '@/app/lib/utils';
 import { fetchFilteredEvents } from '@/app/lib/data';
-import { headers } from 'next/headers';
 import { FutureEventsToggle } from '@/app/ui/events/available/future-toggle';
+import { SubscribeToEvent } from '../buttons';
 
 export default async function EventTable({
   query,
@@ -12,12 +11,11 @@ export default async function EventTable({
   currentPage: number;
 }) {
   
-  
-    const events = await fetchFilteredEvents(query, currentPage, false);
+  const events = await fetchFilteredEvents(query, currentPage, true);
 
   return (
     <div>
-         <div className="mt-6 flow-root">
+      <div className="mt-6 flow-root">
       <div className="inline-block min-w-full align-middle">
         <div className="rounded-lg bg-gray-50 p-2 md:pt-0">
           {/* Mobile */}
@@ -33,16 +31,20 @@ export default async function EventTable({
                 </div>
                 <div className="flex w-full items-center justify-between pt-4">
                   <div>
-                    <p className="text-sm">
-                      {formatDateToLocal(event.date)}
-                    </p>
+                    <p
+                      className={`text-sm ${
+                            new Date(event.date) < new Date() ? 'text-red-600 font-semibold' : ''
+                        }`
+                      }>
+                        {formatDateToLocal(event.date)}
+                      </p>
+                    
                     <p className="text-sm text-gray-600">
                       {formatCurrency(event.price)}
                     </p>
                   </div>
                   <div className="flex justify-end gap-2">
-                    <UpdateEvents id={event.id} />
-                    <DeleteEvents id={event.id} />
+                    <SubscribeToEvent id={event.id}></SubscribeToEvent>
                   </div>
                 </div>
               </div>
@@ -71,8 +73,12 @@ export default async function EventTable({
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     {event.name}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3">
-                    {formatDateToLocal(event.date)}
+                  <td
+                    className={`whitespace-nowrap px-3 py-3 ${
+                      new Date(event.date) < new Date() ? 'text-red-600 font-semibold' : ''
+                      }`}
+                      >
+                        {formatDateToLocal(event.date)}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">
                     {event.location}
@@ -82,8 +88,9 @@ export default async function EventTable({
                   </td>
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex justify-end gap-3">
-                      <UpdateEvents id={event.id} />
-                      <DeleteEvents id={event.id} />
+                      <div className="flex justify-end gap-2">
+                        <SubscribeToEvent id={event.id}></SubscribeToEvent>
+                      </div>
                     </div>
                   </td>
                 </tr>

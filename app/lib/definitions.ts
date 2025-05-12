@@ -39,6 +39,46 @@ export type EventField = {
   costumers_id_subscribed : string[];
 };
 
+export type CoursesField = {
+  id: string;
+  name: string;
+  professor: string
+  date: string[];
+  location: string;
+  rules: string;
+  price: number;
+  patreon_banner: string;
+  costumers_id_paid: string[];
+  costumers_id_subscribed : string[];
+};
+
+export type CostumerField = {
+  cpf: string;
+  name: string;
+  surname: string;
+  plate_name: string;
+  mothers_name: string;
+  date_of_birth: string;
+  status_cpf: string;
+  obs_cpf: string;
+  rg: string;
+  electors_title: string
+  passport: string
+  city: string
+  state: string;
+  country: string
+  phone_number: string
+  cellphone_number: string
+  email: string  
+  groups: string[]
+  coreographies: string[]
+  groups_k_pop: string[]
+  coreographies_k_pop: string[]
+  more_dances: string[]
+  events: string[]
+  cources: string[]
+}
+
 export type Revenue = {
   month: string;
   revenue: number;
