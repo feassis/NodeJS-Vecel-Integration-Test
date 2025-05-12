@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/app/ui/button';
 import { createEvent, EventState } from '@/app/lib/actions';
 import { useActionState } from 'react';
-import RehearsalDatesField from '@/app/ui/events/rehearsal-dates-field';
+import MultipleDatesField from '@/app/ui/rehearsal-dates-field';
 
 
 export default function Form() {
@@ -110,7 +110,7 @@ export default function Form() {
         </div>
 
         {/* Rehearsal Dates */}
-        <RehearsalDatesField />
+        <MultipleDatesField />
 
       </div>
 

@@ -39,6 +39,22 @@ const EventFormSchema = z.object({
     .min(1, { message: 'Please provide at least one rehearsal date.' }),
 });
 
+const CourseFormSchema = z.object({
+  id: z.string().optional(), // optional during creation
+  name: z.string().min(1, { message: 'Please enter a name.' }),
+  professor: z.string().min(1, { message: 'Please enter a professor name.' }),
+  date: z
+    .array(z.string().min(1, { message: 'Date cannot be empty.' }))
+    .min(1, { message: 'Please provide at least one course date.' }),
+  location: z.string().min(1, { message: 'Please enter a location.' }),
+  rules: z.string().min(1, { message: 'Please provide the rules.' }),
+  price: z.coerce
+    .number()
+    .nonnegative({ message: 'Price cannot be negative.' }),
+  costumers_id_paid: z.array(z.string()).optional(),
+  costumers_id_subscribed: z.array(z.string()).optional(),
+});
+
 export type State = {
   errors?: {
     customerId?: string[];
@@ -60,11 +76,25 @@ export type EventState = {
   };
   message?: string | null;
 };
+
+export type CourseState = {
+  errors?: {
+    name?: string[];
+    professor?: string[];
+    date?: string[];
+    location?: string[];
+    rules?: string[];
+    price?: string[];
+  };
+  message?: string | null;
+};
  
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
 const UpdateInvoice = FormSchema.omit({ id: true, date: true });
 const CreateEvent = EventFormSchema.omit({id: true});
 const UpdateEvent = EventFormSchema.omit({id: true});
+const CreateCourse = CourseFormSchema;
+const UpdateCourse = CourseFormSchema;
 
 export async function createEvent(prevState: EventState, formData: FormData)
 {
@@ -135,6 +165,78 @@ export async function createEvent(prevState: EventState, formData: FormData)
 
   revalidatePath('/dashboard/events');
   redirect('/dashboard/events');
+}
+
+export async function createCourse(prevState: CourseState, formData: FormData) {
+  console.log("Try to create course");
+
+  const validatedCourseFields = CreateCourse.safeParse({
+    name: formData.get('name'),
+    professor: formData.get('professor'),
+    date: formData.getAll('date'), // expecting multiple dates
+    location: formData.get('location'),
+    rules: formData.get('rules'),
+    price: formData.get('price'),
+  });
+
+  if (!validatedCourseFields.success) {
+    return {
+      errors: validatedCourseFields.error.flatten().fieldErrors,
+      message: 'Missing fields. Failed to create course.',
+    };
+  }
+
+  const {
+    name,
+    professor,
+    date,
+    location,
+    rules,
+    price,
+  } = validatedCourseFields.data;
+
+  const costumersIdPaid: string[] = [];
+  const costumersIdSubscribed: string[] = [];
+
+  const dateProcessed =
+    date.length === 1 && typeof date[0] === 'string'
+      ? date[0].split(',').map((d) => d.trim())
+      : date;
+
+  const priceInCents = price * 100;
+
+  try {
+    await sql`
+      INSERT INTO courses (
+        name,
+        professor,
+        date,
+        location,
+        rules,
+        price,
+        costumers_id_paid,
+        costumers_id_subscribed
+      )
+      VALUES (
+        ${name},
+        ${professor},
+        ${dateProcessed as string[]}::text[],
+        ${location},
+        ${rules},
+        ${priceInCents},
+        ${sql.array(costumersIdPaid)}::text[],
+        ${sql.array(costumersIdSubscribed)}::text[]
+      )
+    `;
+  } catch (error) {
+    console.error('Error inserting course:', error);
+    return {
+      message: 'Database error. Failed to create course.',
+    };
+  }
+
+  revalidatePath('/dashboard/courses');
+  redirect('/dashboard/courses');
 }
 
 export async function updateEvent(

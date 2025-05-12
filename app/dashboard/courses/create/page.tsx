@@ -1,4 +1,4 @@
-import Form from '@/app/ui/events/create-form';
+import Form from '@/app/ui/cources/create-form';
 import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
 import { fetchCustomers } from '@/app/lib/data';
  
@@ -7,10 +7,10 @@ export default function Page() {
     <main>
       <Breadcrumbs
         breadcrumbs={[
-          { label: 'Events', href: '/dashboard/events' },
+          { label: 'Courses', href: '/dashboard/courses' },
           {
-            label: 'Create Event',
-            href: '/dashboard/events/create',
+            label: 'Create Course',
+            href: '/dashboard/courses/create',
             active: true,
           },
         ]}

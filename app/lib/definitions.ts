@@ -47,7 +47,6 @@ export type CoursesField = {
   location: string;
   rules: string;
   price: number;
-  patreon_banner: string;
   costumers_id_paid: string[];
   costumers_id_subscribed : string[];
 };

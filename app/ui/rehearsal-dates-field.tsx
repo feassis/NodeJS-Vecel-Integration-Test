@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function RehearsalDatesField() {
+export default function MultipleDatesField() {
   const [rehearsalDates, setRehearsalDates] = useState<string[]>(['']);
 
   const handleChange = (index: number, value: string) => {
