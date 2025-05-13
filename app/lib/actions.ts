@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
+import { Console } from 'console';
  
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
@@ -40,7 +41,7 @@ const EventFormSchema = z.object({
 });
 
 const CourseFormSchema = z.object({
-  id: z.string().optional(), // optional during creation
+  id: z.string().optional(),
   name: z.string().min(1, { message: 'Please enter a name.' }),
   professor: z.string().min(1, { message: 'Please enter a professor name.' }),
   date: z
@@ -170,6 +171,8 @@ export async function createEvent(prevState: EventState, formData: FormData)
 export async function createCourse(prevState: CourseState, formData: FormData) {
   console.log("Try to create course");
 
+  console.log( formData.getAll('date'));
+
   const validatedCourseFields = CreateCourse.safeParse({
     name: formData.get('name'),
     professor: formData.get('professor'),
@@ -179,12 +182,16 @@ export async function createCourse(prevState: CourseState, formData: FormData) {
     price: formData.get('price'),
   });
 
+  
   if (!validatedCourseFields.success) {
+    console.log(validatedCourseFields.error.flatten().fieldErrors);
     return {
       errors: validatedCourseFields.error.flatten().fieldErrors,
       message: 'Missing fields. Failed to create course.',
     };
   }
+
+  console.log("is valid");
 
   const {
     name,
@@ -194,7 +201,7 @@ export async function createCourse(prevState: CourseState, formData: FormData) {
     rules,
     price,
   } = validatedCourseFields.data;
-
+  console.log("data cons created");  
   const costumersIdPaid: string[] = [];
   const costumersIdSubscribed: string[] = [];
 
@@ -204,6 +211,8 @@ export async function createCourse(prevState: CourseState, formData: FormData) {
       : date;
 
   const priceInCents = price * 100;
+
+  console.log("data processed");
 
   try {
     await sql`
@@ -234,7 +243,7 @@ export async function createCourse(prevState: CourseState, formData: FormData) {
       message: 'Database error. Failed to create course.',
     };
   }
-
+   console.log("course created?");
   revalidatePath('/dashboard/courses');
   redirect('/dashboard/courses');
 }
@@ -251,10 +260,10 @@ export async function updateEvent(
     rules: formData.get('rules'),
     price: formData.get('price'),
     patreonBanner: formData.get('patreonBanner'),
-    rehearsalDates: formData.getAll('rehearsalDates')
+    rehearsalDates: formData.getAll('rehearsal_dates')
   });
 
-  console.log(formData.getAll('rehearsalDates'));
+  console.log(formData.getAll('rehearsal_dates'));
 
 
   if (!validatedFields.success) {
@@ -278,6 +287,7 @@ export async function updateEvent(
   ? rehearsalDates[0].split(',')  : rehearsalDates;
 
   const priceInCents = price * 100;
+  console.log(priceInCents)
 
   try {
     await sql`
@@ -289,7 +299,7 @@ export async function updateEvent(
         rules = ${rules},
         price = ${priceInCents},
         patreon_banner = ${patreonBanner},
-        rehearsal_dates = ${sql.array(rehearsalDatesProcessed as string[])}
+        rehearsal_dates = ${rehearsalDatesProcessed as string[]}::text[]
       WHERE id = ${id}
     `;
   } catch (error) {
@@ -303,9 +313,75 @@ export async function updateEvent(
   redirect('/dashboard/events');
 }
 
+export async function updateCourse(
+  id: string,
+  prevState: CourseState,
+  formData: FormData,
+) {
+  const validatedFields = UpdateCourse.safeParse({
+    name: formData.get('name'),
+    professor: formData.get('professor'),
+    location: formData.get('location'),
+    rules: formData.get('rules'),
+    price: formData.get('price'),
+    date: formData.getAll('date'),
+  });
+
+  console.log(formData.getAll('dates'));
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Update Course.',
+    };
+  }
+
+  const {
+    name,
+    professor,
+    location,
+    rules,
+    price,
+    date,
+  } = validatedFields.data;
+
+  const datesProcessed = date.length === 1 && typeof date[0] === 'string'
+    ? date[0].split(',')
+    : date;
+
+  const priceInCents = price * 100;
+
+  try {
+    await sql`
+      UPDATE courses
+      SET 
+        name = ${name},
+        professor = ${professor},
+        location = ${location},
+        rules = ${rules},
+        price = ${priceInCents},
+        dates = ${sql.array(datesProcessed as string[])}::text[]
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    console.error(error);
+    return { message: 'Database Error: Failed to Update Course.' };
+  }
+
+  console.log("Update Course");
+
+  revalidatePath('/dashboard/courses');
+  redirect('/dashboard/courses');
+}
+
 export async function deleteEvent(id: string) {
   await sql`DELETE FROM events WHERE id = ${id}`;
   revalidatePath('/dashboard/events');
+}
+
+export async function deleteCourse(id: string) {
+  await sql`DELETE FROM courses WHERE id = ${id}`;
+  revalidatePath('/dashboard/courses');
 }
 
 export async function createInvoice(prevState: State, formData: FormData) {

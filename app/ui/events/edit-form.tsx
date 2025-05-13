@@ -5,6 +5,7 @@ import { useActionState } from 'react';
 import { EventField } from '@/app/lib/definitions';
 import Link from 'next/link';
 import { Button } from '@/app/ui/button';
+import MultipleDatesField from '../rehearsal-dates-field';
 
 export default function EditEventForm({ event }: { event: EventField }) {
   const initialState: EventState = { message: null, errors: {} };
@@ -92,7 +93,7 @@ export default function EditEventForm({ event }: { event: EventField }) {
             name="price"
             type="number"
             step="0.01"
-            defaultValue={(event.price / 100).toFixed(2)}
+            defaultValue={(event.price).toFixed(2)}
             className="block w-full rounded-md border border-gray-200 py-2 px-3 text-sm"
           />
         </div>
@@ -112,19 +113,7 @@ export default function EditEventForm({ event }: { event: EventField }) {
         </div>
 
         {/* Rehearsal Dates */}
-        <div className="mb-4">
-          <label htmlFor="rehearsalDates" className="mb-2 block text-sm font-medium">
-            Rehearsal Dates
-          </label>
-          <textarea
-            id="rehearsalDates"
-            name="rehearsalDates"
-            placeholder="Enter dates as comma-separated datetimes"
-            defaultValue={event.rehearsal_dates?.join(', ')}
-            className="block w-full rounded-md border border-gray-200 py-2 px-3 text-sm"
-          />
-          <p className="text-sm text-gray-500">Use ISO format: YYYY-MM-DDTHH:MM</p>
-        </div>
+        <MultipleDatesField name='rehearsal_dates' initialDates={event.rehearsal_dates} label='Rehearsal Dates' />
       </div>
 
       <div className="mt-6 flex justify-end gap-4">

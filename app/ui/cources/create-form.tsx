@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/app/ui/button';
 import { createCourse, CourseState} from '@/app/lib/actions';
 import { useActionState } from 'react';
-import MultipleDatesField from '../rehearsal-dates-field';
+import MultipleDatesField from '../cources/multipleDates-dates-field';
 
 export default function CreateCourseForm() {
   const initialState: CourseState = { message: null, errors: {} };

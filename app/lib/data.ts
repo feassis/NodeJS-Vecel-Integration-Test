@@ -6,7 +6,8 @@ import {
   InvoicesTable,
   LatestInvoiceRaw,
   Revenue,
-  EventField
+  EventField,
+  CoursesField
 } from './definitions';
 import { formatCurrency } from './utils';
 
@@ -282,6 +283,123 @@ export async function fetchFilteredEvents(query: string, currentPage: number, on
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch events.');
+  }
+}
+
+export async function fetchCourses() {
+  try {
+    const courses = await sql<CoursesField[]>`
+      SELECT
+        id,
+        name,
+        professor,
+        date,
+        location,
+        rules,
+        price,
+        costumers_id_paid,
+        costumers_id_subscribed
+      FROM courses
+      ORDER BY date ASC
+    `;
+
+    return courses;
+  } catch (err) {
+    console.error('Database Error:', err);
+    throw new Error('Failed to fetch all courses.');
+  }
+}
+
+
+export async function fetchCourseById(id: string) {
+  try {
+    const data = await sql<CoursesField[]>`
+      SELECT
+        courses.id,
+        courses.name,
+        courses.professor,
+        courses.date,
+        courses.location,
+        courses.rules,
+        courses.price,
+        courses.costumers_id_paid,
+        courses.costumers_id_subscribed
+      FROM courses
+      WHERE courses.id = ${id};
+    `;
+
+    const course = data.map((course) => ({
+      ...course,
+      // Convert price from cents to currency format
+      price: course.price / 100,
+    }));
+
+    return course[0];
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch course.');
+  }
+}
+
+export async function fetchCoursesPages(query: string) {
+  try {
+    const data = await sql`
+      SELECT COUNT(*)
+      FROM courses
+      WHERE
+        name ILIKE ${`%${query}%`} OR
+        professor ILIKE ${`%${query}%`} OR
+        location ILIKE ${`%${query}%`} OR
+        rules ILIKE ${`%${query}%`} OR
+        date::text ILIKE ${`%${query}%`} OR
+        price::text ILIKE ${`%${query}%`}
+    `;
+
+    const totalPages = Math.ceil(Number(data[0].count) / ITEMS_PER_PAGE);
+    return totalPages;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch total number of courses.');
+  }
+}
+
+export async function fetchFilteredCourses(query: string, currentPage: number, onlyFuture: boolean) {
+  const now = new Date().toISOString();
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  const dateFilter = onlyFuture ? sql`AND date[1] > ${now}` : sql``;
+
+  try {
+    const courses = await sql<CoursesField[]>`
+      SELECT
+        id,
+        name,
+        professor,
+        date,
+        location,
+        rules,
+        price,
+        costumers_id_paid,
+        costumers_id_subscribed
+      FROM courses
+      WHERE (
+        name ILIKE ${`%${query}%`} OR
+        professor ILIKE ${`%${query}%`} OR
+        location ILIKE ${`%${query}%`} OR
+        rules ILIKE ${`%${query}%`} OR
+        date::text ILIKE ${`%${query}%`} OR
+        price::text ILIKE ${`%${query}%`}
+      )
+      ${dateFilter}
+      ORDER BY date[1] DESC
+      LIMIT ${ITEMS_PER_PAGE}
+      OFFSET ${offset}
+    `;
+
+    return courses;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch courses.');
   }
 }
 
