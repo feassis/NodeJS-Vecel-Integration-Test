@@ -51,6 +51,12 @@ export type CoursesField = {
   costumers_id_subscribed : string[];
 };
 
+export type Participant = {
+  name: string;
+  plate_name: string;
+  rg: string;
+};
+
 export type CostumerField = {
   cpf: string;
   name: string;
@@ -76,6 +82,7 @@ export type CostumerField = {
   more_dances: string[]
   events: string[]
   cources: string[]
+  participants: Participant[];
 }
 
 export type Revenue = {
@@ -127,7 +134,7 @@ export type FormattedCustomersTable = {
   total_paid: string;
 };
 
-export type CustomerField = {
+export type CustomerFieldInvoice = {
   id: string;
   name: string;
 };

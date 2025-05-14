@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/app/ui/button';
 import MultipleDatesField from '../rehearsal-dates-field';
 
-export default function EditEventForm({ event }: { event: EventField }) {
+export default function EditEventForm({ event: event }: { event: EventField }) {
   const initialState: EventState = { message: null, errors: {} };
   const updateEventWithId = updateEvent.bind(null, event.id);
   const [state, formAction] = useActionState(updateEventWithId, initialState);

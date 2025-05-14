@@ -7,7 +7,6 @@ import { redirect } from 'next/navigation';
 
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
-import { Console } from 'console';
  
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
@@ -56,6 +55,35 @@ const CourseFormSchema = z.object({
   costumers_id_subscribed: z.array(z.string()).optional(),
 });
 
+const CreateConsumerForm = z.object({
+  cpf: z.string().min(1, 'CPF is required'),
+  name: z.string().min(1, 'Name is required'),
+  surname: z.string().min(1, 'Surname is required'),
+  plate_name: z.string().min(1, 'Plate name is required'),
+  mothers_name: z.string().min(1, "Mother's name is required"),
+  date_of_birth: z.string().min(1, 'Date of birth is required'), // Or use z.coerce.date() if date type
+  rg: z.string().min(1, 'RG is required'),
+  electors_title: z.string().min(1, 'elector title is required'),
+  passport: z.string().min(1, 'Passpor required'),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State is required'),
+  country: z.string().min(1, 'Country is required'),
+  phone_number: z.string().min(1, 'phone number'),
+  cellphone_number: z.string().min(1, 'Cellphone number is required'),
+  email: z.string().email('Invalid email'),
+
+  // participants field
+  participants: z
+    .array(
+      z.object({
+        name: z.string().min(1, 'Participant name is required'),
+        plate_name: z.string().min(1, 'Participant plate name is required'),
+        rg: z.string().min(1, 'Participant RG is required'),
+      })
+    )
+    .optional(),
+});
+
 export type State = {
   errors?: {
     customerId?: string[];
@@ -89,6 +117,32 @@ export type CourseState = {
   };
   message?: string | null;
 };
+
+export type ConsumerStateForEvents = {
+  errors?: {
+    cpf?: string[];
+    name?: string[];
+    surname?: string[];
+    plate_name?: string[];
+    mothers_name?: string[];
+    date_of_birth?: string[];
+    rg?: string[];
+    electors_title?: string[];
+    passport?: string[];
+    city?: string[];
+    state?: string[];
+    country?: string[];
+    phone_number?: string[];
+    cellphone_number?: string[];
+    email?: string[];
+    participants?: {
+      name?: string;
+      plate_name?: string;
+      rg?: string;
+    }[];
+  };
+  message?: string | null;
+};
  
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
 const UpdateInvoice = FormSchema.omit({ id: true, date: true });
@@ -96,6 +150,8 @@ const CreateEvent = EventFormSchema.omit({id: true});
 const UpdateEvent = EventFormSchema.omit({id: true});
 const CreateCourse = CourseFormSchema;
 const UpdateCourse = CourseFormSchema;
+const CreateConsumer = CreateConsumerForm;
+const UpdateConsumer = CreateConsumerForm;
 
 export async function createEvent(prevState: EventState, formData: FormData)
 {
@@ -321,33 +377,39 @@ export async function updateCourse(
   const validatedFields = UpdateCourse.safeParse({
     name: formData.get('name'),
     professor: formData.get('professor'),
+    date: formData.getAll('date'), // expecting multiple dates
     location: formData.get('location'),
     rules: formData.get('rules'),
     price: formData.get('price'),
-    date: formData.getAll('date'),
   });
 
-  console.log(formData.getAll('dates'));
-
+  
   if (!validatedFields.success) {
+    console.log(validatedFields.error.flatten().fieldErrors);
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: 'Missing Fields. Failed to Update Course.',
+      message: 'Missing fields. Failed to create course.',
     };
   }
+
+  console.log("is valid");
 
   const {
     name,
     professor,
+    date,
     location,
     rules,
     price,
-    date,
   } = validatedFields.data;
+  console.log("data cons created");  
 
-  const datesProcessed = date.length === 1 && typeof date[0] === 'string'
-    ? date[0].split(',')
-    : date;
+  const dateProcessed =
+    date.length === 1 && typeof date[0] === 'string'
+      ? date[0].split(',').map((d) => d.trim())
+      : date;
+
+  console.log(dateProcessed)
 
   const priceInCents = price * 100;
 
@@ -360,7 +422,7 @@ export async function updateCourse(
         location = ${location},
         rules = ${rules},
         price = ${priceInCents},
-        dates = ${sql.array(datesProcessed as string[])}::text[]
+        date = ${sql.array(dateProcessed as string[])}::text[]
       WHERE id = ${id}
     `;
   } catch (error) {
@@ -458,6 +520,140 @@ export async function createInvoice(prevState: State, formData: FormData) {
     await sql`DELETE FROM invoices WHERE id = ${id}`;
     revalidatePath('/dashboard/invoices');
   }
+
+
+  export async function subscribeToEvent(
+  prevState: ConsumerStateForEvents,
+  formData: FormData
+) {
+  const validatedFields = CreateConsumer.safeParse({
+    cpf: formData.get('cpf'),
+    name: formData.get('name'),
+    surname: formData.get('surname'),
+    plate_name: formData.get('plate_name'),
+    mothers_name: formData.get('mothers_name'),
+    date_of_birth: formData.get('date_of_birth'),
+    status_cpf: formData.get('status_cpf'),
+    rg: formData.get('rg'),
+    electors_title: formData.get('electors_title'),
+    passport: formData.get('passport'),
+    city: formData.get('city'),
+    state: formData.get('state'),
+    country: formData.get('country'),
+    phone_number: formData.get('phone_number'),
+    cellphone_number: formData.get('cellphone_number'),
+    email: formData.get('email'),
+    participants: extractParticipants(formData)
+  });
+
+  if (!validatedFields.success) {
+  const flatErrors = validatedFields.error.flatten().fieldErrors;
+
+  const participantsErrors: {
+    name?: string;
+    plate_name?: string;
+    rg?: string;
+  }[] = [];
+
+  return {
+    errors: {
+      ...flatErrors,
+      participants: participantsErrors,
+    },
+    message: 'Missing or invalid fields. Failed to create consumer.',
+  };
+}
+
+  const {
+    cpf,
+    name,
+    surname,
+    plate_name,
+    mothers_name,
+    date_of_birth,
+    rg,
+    electors_title,
+    passport,
+    city,
+    state,
+    country,
+    phone_number,
+    cellphone_number,
+    email,
+    participants
+  } = validatedFields.data;
+
+  try {
+    await sql`
+  INSERT INTO consumers (
+    cpf,
+    name,
+    surname,
+    plate_name,
+    mothers_name,
+    date_of_birth,
+    rg,
+    electors_title,
+    passport,
+    city,
+    state,
+    country,
+    phone_number,
+    cellphone_number,
+    email,
+    groups,
+    coreographies,
+    groups_k_pop,
+    coreographies_k_pop,
+    more_dances,
+    events,
+    cources
+  ) VALUES (
+    ${cpf},
+    ${name},
+    ${surname},
+    ${plate_name},
+    ${mothers_name},
+    ${date_of_birth},
+    ${rg},
+    ${electors_title},
+    ${passport},
+    ${city},
+    ${state},
+    ${country},
+    ${phone_number},
+    ${cellphone_number},
+    ${email},
+    ARRAY[]::text[],
+    ARRAY[]::text[],
+    ARRAY[]::text[],
+    ARRAY[]::text[],
+    ARRAY[]::text[],
+    ARRAY[]::text[],
+    ARRAY[]::text[]
+  )
+`;
+  } catch (error) {
+    console.error('Error inserting consumer:', error);
+    return {
+      message: 'Database error. Failed to create consumer.',
+    };
+  }
+
+  revalidatePath('/dashboard/consumers');
+  redirect('/dashboard/consumers');
+}
+
+  export async function processEventSubscription(
+  prevState: ConsumerStateForEvents,
+  formData: FormData,)
+  {
+    console.log("processSubscription")
+
+    return await subscribeToEvent(prevState, formData);
+  }
+
+  
 
   export async function authenticate(
     prevState: string | undefined,

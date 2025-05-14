@@ -3,7 +3,7 @@
 
 import { updateInvoice, State } from '@/app/lib/actions';
 import { useActionState } from 'react';
-import { CustomerField, InvoiceForm } from '@/app/lib/definitions';
+import { CustomerFieldInvoice, InvoiceForm } from '@/app/lib/definitions';
 import {
   CheckIcon,
   ClockIcon,
@@ -18,7 +18,7 @@ export default function EditInvoiceForm({
   customers,
 }: {
   invoice: InvoiceForm;
-  customers: CustomerField[];
+  customers: CustomerFieldInvoice[];
 }) {
   const initialState: State = { message: null, errors: {} };
   const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);

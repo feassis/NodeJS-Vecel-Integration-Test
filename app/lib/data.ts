@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 import {
-  CustomerField,
+  CustomerFieldInvoice,
   CustomersTableType,
   InvoiceForm,
   InvoicesTable,
@@ -405,7 +405,7 @@ export async function fetchFilteredCourses(query: string, currentPage: number, o
 
 export async function fetchCustomers() {
   try {
-    const customers = await sql<CustomerField[]>`
+    const customers = await sql<CustomerFieldInvoice[]>`
       SELECT
         id,
         name

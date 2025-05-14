@@ -1,5 +1,5 @@
 import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { deleteEvent, deleteCourse } from '@/app/lib/actions';
+import { deleteEvent } from '@/app/lib/actions';
 import Link from 'next/link';
 
 export function CreateEvents() {
@@ -52,26 +52,4 @@ export function DeleteEvents({ id }: { id: string }) {
   );
 }
 
-export function UpdateCourses({ id }: { id: string }) {
-  return (
-    <Link
-      href={`/dashboard/courses/${id}/edit`}
-      className="rounded-md border p-2 hover:bg-gray-100"
-    >
-      <PencilIcon className="w-5" />
-    </Link>
-  );
-}
 
-export function DeleteCourses({ id }: { id: string }) {
-  const deleteCourseWithId = deleteCourse.bind(null, id);
-
-  return (
-    <form action={deleteCourseWithId}>
-      <button type="submit" className="rounded-md border p-2 hover:bg-gray-100">
-        <span className="sr-only">Delete</span>
-        <TrashIcon className="w-5" />
-      </button>
-    </form>
-  );
-}
